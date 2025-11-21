@@ -25,19 +25,37 @@ A robust backend system for a Solana DEX routing and order execution engine.
    ```bash
    npm install
    ```
-3. **Start Infrastructure**:
+3. **Create Environment File**:
+   ```bash
+   # Windows (PowerShell)
+   @"
+   DATABASE_URL="postgresql://postgres:passwordArora%401976@localhost:5432/dex_backend?schema=public"
+   REDIS_HOST="localhost"
+   REDIS_PORT="6379"
+   PORT=3000
+   "@ | Out-File -FilePath .env -Encoding utf8
+
+   # Linux/Mac
+   cat > .env << EOF
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/dex_backend?schema=public"
+   REDIS_HOST="localhost"
+   REDIS_PORT="6379"
+   PORT=3000
+   EOF
+   ```
+4. **Start Infrastructure**:
    ```bash
    docker-compose up -d
    ```
-4. **Database Setup**:
+5. **Database Setup**:
    ```bash
    npx prisma migrate dev --name init
    ```
-5. **Run Development Server**:
+6. **Run Development Server**:
    ```bash
    npm run dev
    ```
-6. **Run Tests**:
+7. **Run Tests**:
    ```bash
    npm test
    ```

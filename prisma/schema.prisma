@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserOrder {
+  id          String         @id @default(uuid())
+  status      String         // pending, routing, building, submitted, confirmed, failed
+  inputToken  String
+  outputToken String
+  amount      Float
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  logs        ExecutionLog[]
+  result      Json?
+}
+
+model ExecutionLog {
+  id        String    @id @default(uuid())
+  orderId   String
+  order     UserOrder @relation(fields: [orderId], references: [id])
+  message   String
+  timestamp DateTime  @default(now())
+}

@@ -1,0 +1,59 @@
+{
+    "info": {
+        "_postman_id": "solana-dex-backend",
+        "name": "Solana DEX Backend",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Execute Order",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"inputToken\": \"SOL\",\n    \"outputToken\": \"USDC\",\n    \"amount\": 1.5\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:3000/api/orders/execute",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "api",
+                        "orders",
+                        "execute"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "WebSocket Subscription",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "ws://localhost:3000/ws",
+                    "protocol": "ws",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3000",
+                    "path": [
+                        "ws"
+                    ]
+                },
+                "description": "Connect to this endpoint and send: {\"type\": \"SUBSCRIBE\", \"orderId\": \"YOUR_ORDER_ID\"}"
+            },
+            "response": []
+        }
+    ]
+}

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test - Eterna Backend</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .connecting {
+            background: #fff3cd;
+            color: #856404;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .messages {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .message {
+            padding: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+        }
+        .error {
+            border-left-color: #dc3545;
+            color: #dc3545;
+        }
+        .success {
+            border-left-color: #28a745;
+            color: #28a745;
+        }
+        .info {
+            border-left-color: #17a2b8;
+            color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 WebSocket Test Client</h1>
+        <p>Test your Eterna Backend WebSocket connection</p>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+
+        <div>
+            <label for="wsUrl">WebSocket URL:</label>
+            <input type="text" id="wsUrl" value="ws://localhost:3000/ws" />
+        </div>
+
+        <div>
+            <label for="orderId">Order ID (from API response):</label>
+            <input type="text" id="orderId" placeholder="Enter orderId here..." />
+        </div>
+
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="subscribeBtn" onclick="subscribe()" disabled>Subscribe to Order</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+
+        <div class="messages" id="messages">
+            <div class="message info">Waiting for connection...</div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function updateStatus(status, className) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Status: ${status}`;
+            statusEl.className = `status ${className}`;
+        }
+
+        function addMessage(message, type = 'info') {
+            const messagesEl = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            
+            try {
+                updateStatus('Connecting...', 'connecting');
+                addMessage(`Connecting to ${url}...`, 'info');
+                
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    updateStatus('Connected', 'connected');
+                    addMessage('✅ WebSocket connected successfully!', 'success');
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('subscribeBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = false;
+                };
+
+                ws.onmessage = (event) => {
+                    addMessage(`📨 Received: ${event.data}`, 'success');
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.status) {
+                            addMessage(`📊 Order Status Update: ${data.status}`, 'success');
+                        }
+                    } catch (e) {
+                        // Not JSON, just display as is
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    addMessage(`❌ WebSocket error occurred`, 'error');
+                    console.error('WebSocket error:', error);
+                };
+
+                ws.onclose = () => {
+                    updateStatus('Disconnected', 'disconnected');
+                    addMessage('🔌 WebSocket disconnected', 'info');
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('subscribeBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = true;
+                };
+
+            } catch (error) {
+                addMessage(`❌ Connection failed: ${error.message}`, 'error');
+                updateStatus('Error', 'disconnected');
+            }
+        }
+
+        function subscribe() {
+            const orderId = document.getElementById('orderId').value.trim();
+            
+            if (!orderId) {
+                addMessage('❌ Please enter an Order ID', 'error');
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('❌ WebSocket is not connected', 'error');
+                return;
+            }
+
+            const message = {
+                type: 'SUBSCRIBE',
+                orderId: orderId
+            };
+
+            ws.send(JSON.stringify(message));
+            addMessage(`📤 Sent: ${JSON.stringify(message)}`, 'info');
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            addMessage('Page loaded. Click "Connect" to start.', 'info');
+        });
+    </script>
+</body>
+</html>
